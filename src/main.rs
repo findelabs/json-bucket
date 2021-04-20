@@ -18,7 +18,7 @@ type Result<T> = std::result::Result<T, MyError>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let opts = App::new("mongodb_poster")
+    let opts = App::new("json-bucket")
         .version(crate_version!())
         .author("Daniel F. <dan@findelabs.com>")
         .about("Main findereport site generator")
@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
     let server = Server::bind(&addr).serve(service);
 
     println!(
-        "Starting mongodb-poster:{} on http://{}",
+        "Starting json-bucket :{} on http://{}",
         crate_version!(),
         addr
     );

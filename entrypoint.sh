@@ -2,4 +2,4 @@
 set -e
 echo "$@"
 
-exec /app/mongodb-poster "$@"
+exec /app/json-bucket "$@"

@@ -6,7 +6,7 @@ COPY entrypoint.sh /app/
 
 RUN chmod +x /app/entrypoint.sh
 
-COPY mongodb-poster /app/
+COPY json-bucket /app/
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 

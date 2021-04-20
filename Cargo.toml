@@ -1,5 +1,5 @@
 [package]
-name = "mongodb-poster"
+name = "json-bucket"
 version = "0.1.0"
 authors = ["Dan <circa.1991@gmail.com>"]
 edition = "2018"

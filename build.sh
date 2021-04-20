@@ -10,8 +10,8 @@ msg=$1
 
 cargo build --release
 
-cp ./target/release/mongodb-poster .
+cp ./target/release/json-bucket .
 
-strip mongodb-poster
+strip json-bucket
 
 sudo docker build .

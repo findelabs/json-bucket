@@ -16,7 +16,7 @@ type Result<T> = std::result::Result<T, MyError>;
 impl DB {
     pub async fn init(url: &str, db: &str) -> Result<Self> {
         let mut client_options = ClientOptions::parse(url).await?;
-        client_options.app_name = Some("mongodb-poster".to_string());
+        client_options.app_name = Some("json-bucket".to_string());
         Ok(Self {
             client: Client::with_options(client_options)?,
             db: db.to_owned()
