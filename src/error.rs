@@ -4,14 +4,11 @@ use std::str::Utf8Error;
 
 #[derive(Debug)]
 pub enum MyError {
-    MissingItem,
     JsonError,
     HyperError,
     UtfError,
     MongodbError,
     UrlParseError,
-    TitleTooLong,
-    SummaryTooLong,
     BsonError,
 }
 
@@ -20,14 +17,11 @@ impl std::error::Error for MyError {}
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            MyError::MissingItem => f.write_str("Required Item Not Found"),
             MyError::JsonError => f.write_str("Error converting to json"),
             MyError::HyperError => f.write_str("Hyper Error"),
             MyError::UtfError => f.write_str("Utf conversion Error"),
             MyError::MongodbError => f.write_str("MongoDB Error"),
             MyError::UrlParseError => f.write_str("Failed to parse url Error"),
-            MyError::TitleTooLong => f.write_str("Title is too long"),
-            MyError::SummaryTooLong => f.write_str("Summary is too long"),
             MyError::BsonError=> f.write_str("Could not parse as bson doc"),
         }
     }

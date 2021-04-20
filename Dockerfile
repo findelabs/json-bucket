@@ -1,4 +1,4 @@
-from rust:slim-stretch
+from ubuntu
 
 RUN mkdir /app 
 
