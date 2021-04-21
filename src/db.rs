@@ -1,8 +1,8 @@
 use chrono::prelude::*;
-use mongodb::bson::{document::Document};
+use mongodb::bson::{doc, document::Document};
 //use mongodb::{options::ClientOptions, options::FindOptions, Client, Collection};
 use crate::error::MyError;
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{options::ClientOptions, Client, options::FindOneOptions};
 //use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
@@ -23,6 +23,37 @@ impl DB {
         })
     }
 
+    pub async fn query(&self, collection: &str, query: Document) -> Result<Document> {
+
+        // Log which collection this is going into
+        log::info!("Searching {}.{}", self.db, collection);
+
+        let find_one_options = FindOneOptions::builder()
+            .sort(doc! { "time": -1 })
+            .projection( doc! { "_id" : 0, "_time" : 0 })
+            .build();
+
+        let collection = self.client.database(&self.db).collection(collection);
+
+        match collection.find_one(query, find_one_options).await {
+            Ok(result) => {
+                match result {
+                    Some(doc) => {
+                        log::info!("Found a result");
+                        Ok(doc)
+                    },
+                    None => {
+                        log::info!("No results found");
+                        Ok(doc! { "msg": "no results found" })
+                    }
+                }
+            },
+            Err(e) => {
+                log::error!("Error searching mongodb: {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
     pub async fn insert(&self, collection: &str, mut mongodoc: Document) -> Result<String> {
 
         // Log which collection this is going into
