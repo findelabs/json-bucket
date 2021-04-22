@@ -7,9 +7,25 @@ use rust_tools::bson::to_doc;
 use crate::db;
 use crate::error;
 
+// This is the main handler, to catch any failures in the echo fn
+pub async fn main_handler(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::MyError> {
+    match echo(req, db).await {
+        Ok(s) => {
+            log::info!("Handler got success");
+            Ok(s)
+        },
+        Err(e) => {
+            log::info!("Handler caught error: {}", e);
+            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
+            *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+            Ok(response)
+        }
+    }
+}
+
 // This is our service handler. It receives a Request, routes on its
 // path, and returns a Future of a Response.
-pub async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::MyError> {
+async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::MyError> {
     
     // Match on method
     match req.method() {
@@ -151,7 +167,7 @@ pub async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, erro
                     }
                 }
                 _ => {
-                    Ok(Response::new(Body::from("{ \"msg\" : \"Path currently not used\" }".to_string())))
+                    Ok(Response::new(Body::from(format!("{{ \"msg\" : \"{} is not a recognized action\" }}", last.unwrap_or_else(|| "missing")))))
                 }
             }
         }
@@ -180,14 +196,14 @@ pub async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, erro
                         }
                     }
                 }
-                _ => Ok(Response::new(Body::from("{ \"msg\" : \"Get method not currently used\" }".to_string()))),
+                _ => Ok(Response::new(Body::from(format!("{{ \"msg\" : \"{} is not a known path\" }}", path)))),
             }
         }
 
-        // Return the 404 Not Found for other routes.
+        // Return the 404 for unknown meth
         _ => {
-            log::info!("Returning not found for {}", req.uri().path());
-            let mut response = Response::new(Body::from(format!("{{\"msg\" : \"path or method not recognized\" }}")));
+            log::info!("Method not recognized {}", req.method());
+            let mut response = Response::new(Body::from(format!("{{\"msg\" : \"method not recognized\" }}")));
             *response.status_mut() = StatusCode::NOT_FOUND;
             Ok(response)
         }

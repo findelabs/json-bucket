@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
         let db = db.clone();
         async move {
             Ok::<_, hyper::Error>(service_fn(move |req: Request<Body>| {
-                server::echo(req, db.clone())
+                server::main_handler(req, db.clone())
             }))
         }
     });

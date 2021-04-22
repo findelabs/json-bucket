@@ -17,7 +17,7 @@ impl std::error::Error for MyError {}
 impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            MyError::JsonError => f.write_str("Error converting to json"),
+            MyError::JsonError => f.write_str("Error converting data to json"),
             MyError::HyperError => f.write_str("Hyper Error"),
             MyError::UtfError => f.write_str("Utf conversion Error"),
             MyError::MongodbError => f.write_str("MongoDB Error"),
