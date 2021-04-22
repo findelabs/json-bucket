@@ -26,3 +26,4 @@ mongodb = "1.1.0"
 futures = { version = "0.3.4", default-features = false, features = ["async-await"] }
 bson = "1.1"
 json = "0.12"
+rust_tools = { git = "https://github.com/findelabs/rust-tools.git", branch = "master" }
