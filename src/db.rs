@@ -70,4 +70,21 @@ impl DB {
             }
         }
     }
+
+    pub async fn collections(&self) -> Result<Document> {
+        // Log that we are trying to list collections
+        log::info!("Getting collections in {}", self.db);
+
+        let command = doc! { "listCollections": 1.0, "authorizedCollections": true, "truenameOnly": true };
+        match self.client.database(&self.db).run_command(command,None).await {
+            Ok(collections) => {
+                log::info!("Success listing collections in {}", self.db);
+                Ok(collections)
+            },
+            Err(e) => {
+                log::info!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
 }
