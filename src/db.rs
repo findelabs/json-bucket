@@ -2,8 +2,9 @@ use chrono::prelude::*;
 use mongodb::bson::{doc, document::Document};
 //use mongodb::{options::ClientOptions, options::FindOptions, Client, Collection};
 use crate::error::MyError;
-use mongodb::{options::ClientOptions, Client, options::FindOneOptions};
+use mongodb::{options::ClientOptions, Client, options::FindOneOptions, options::FindOptions};
 //use serde::{Deserialize, Serialize};
+use futures::StreamExt;
 
 #[derive(Clone, Debug)]
 pub struct DB {
@@ -23,7 +24,7 @@ impl DB {
         })
     }
 
-    pub async fn query(&self, collection: &str, query: Document) -> Result<Document> {
+    pub async fn findone(&self, collection: &str, query: Document) -> Result<Document> {
 
         // Log which collection this is going into
         log::info!("Searching {}.{}", self.db, collection);
@@ -54,6 +55,34 @@ impl DB {
             }
         }
     }
+
+    pub async fn find(&self, collection: &str, query: Document) -> Result<Vec<Document>> {
+
+        // Log which collection this is going into
+        log::info!("Searching {}.{}", self.db, collection);
+
+        let find_options = FindOptions::builder()
+            .sort(doc! { "time": -1 })
+            .projection( doc! { "_id" : 0, "_time" : 0 })
+            .limit(100)
+            .build();
+
+        let collection = self.client.database(&self.db).collection(collection);
+        let mut cursor = collection.find(query, find_options).await?;
+
+        let mut result: Vec<Document> = Vec::new();
+        while let Some(doc) = cursor.next().await {
+            match doc {
+                Ok(converted) => result.push(converted),
+                Err(e) => {
+                    log::error!("Caught error, skipping: {}", e);
+                    continue;
+                }
+            }
+        }
+        Ok(result)
+    }
+
     pub async fn insert(&self, collection: &str, mut mongodoc: Document) -> Result<String> {
 
         // Log which collection this is going into

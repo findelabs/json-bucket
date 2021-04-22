@@ -62,7 +62,7 @@ pub async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, erro
                         }
                     }
                 }
-                Some("query") => {
+                Some("findone") => {
                     let path = req.uri().path();
                     log::info!("Received POST to {}", &path);
         
@@ -91,7 +91,51 @@ pub async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, erro
                     // Print out converted bson doc
                     log::info!("Converted json into bson doc: {}", data);
         
-                    match db.query(&collection, data).await {
+                    match db.findone(&collection, data).await {
+                        Ok(doc) => {
+                            let json_doc = serde_json::to_string(&doc).expect("failed converting bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        },
+                        Err(e) => {
+                            log::info!("Got error {}", e);
+                            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
+                            *response.status_mut() = StatusCode::NOT_FOUND;
+                            Ok(response)
+                        }
+                    }
+                }
+                Some("find") => {
+                    let path = req.uri().path();
+                    log::info!("Received POST to {}", &path);
+        
+                    // Split apart request
+                    let (parts,body) = req.into_parts();
+        
+                    // Get short root path
+                    let collection = get_root_path(&parts);
+        
+                    // Create queriable hashmap from queries
+                    // let _queries = queries(&parts).expect("Failed to generate hashmap of queries");
+        
+                    // Convert body to json Value
+                    let whole_body = hyper::body::to_bytes(body).await?;
+                    let whole_body_vec = whole_body.iter().cloned().collect::<Vec<u8>>();
+                    let value = from_utf8(&whole_body_vec).to_owned()?;
+        
+                    // Convert string to bson
+                    let data = match to_doc(value) {
+                        Ok(d) => d,
+                        Err(_) => {
+                            return Err(error::MyError::JsonError)
+                        }
+                    };
+        
+                    // Print out converted bson doc
+                    log::info!("Converted json into bson doc: {}", data);
+        
+                    match db.find(&collection, data).await {
                         Ok(doc) => {
                             let json_doc = serde_json::to_string(&doc).expect("failed converting bson to json");
                             let mut response = Response::new(Body::from(json_doc));
