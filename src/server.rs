@@ -3,12 +3,13 @@ use std::str::from_utf8;
 //use rust_tools::http::queries;
 use rust_tools::strings::get_root_path;
 use rust_tools::bson::to_doc;
+use std::error::Error;
 
 use crate::db;
 use crate::error;
 
 // This is the main handler, to catch any failures in the echo fn
-pub async fn main_handler(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::MyError> {
+pub async fn main_handler(req: Request<Body>, db: db::DB) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
     match echo(req, db).await {
         Ok(s) => {
             log::info!("Handler got success");
@@ -72,9 +73,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         },
                         Err(e) => {
                             log::info!("Got error {}", e);
-                            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
-                            *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            Err(e)
                         }
                     }
                 }
@@ -116,9 +115,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         },
                         Err(e) => {
                             log::info!("Got error {}", e);
-                            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
-                            *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            Err(e)
                         }
                     }
                 }
@@ -160,9 +157,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         },
                         Err(e) => {
                             log::info!("Got error {}", e);
-                            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
-                            *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            Err(e)
                         }
                     }
                 }
@@ -190,9 +185,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         },
                         Err(e) => {
                             log::info!("Got error {}", e);
-                            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
-                            *response.status_mut() = StatusCode::NOT_FOUND;
-                            Ok(response)
+                            Err(e)
                         }
                     }
                 }
