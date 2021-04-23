@@ -12,11 +12,11 @@ use crate::error;
 pub async fn main_handler(req: Request<Body>, db: db::DB) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
     match echo(req, db).await {
         Ok(s) => {
-            log::info!("Handler got success");
+            log::debug!("Handler got success");
             Ok(s)
         },
         Err(e) => {
-            log::info!("Handler caught error: {}", e);
+            log::debug!("Handler caught error: {}", e);
             let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
             *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
             Ok(response)
@@ -63,7 +63,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     };
         
                     // Print out converted bson doc
-                    log::info!("Converted json into bson doc: {}", data);
+                    log::debug!("Converted json into bson doc: {}", data);
         
                     match db.insert(&collection, data).await {
                         Ok(_) => {
@@ -72,7 +72,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                             Ok(response)
                         },
                         Err(e) => {
-                            log::info!("Got error {}", e);
+                            log::debug!("Got error {}", e);
                             Err(e)
                         }
                     }
@@ -104,7 +104,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     };
         
                     // Print out converted bson doc
-                    log::info!("Converted json into bson doc: {}", data);
+                    log::debug!("Converted json into bson doc: {}", data);
         
                     match db.findone(&collection, data).await {
                         Ok(doc) => {
@@ -114,7 +114,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                             Ok(response)
                         },
                         Err(e) => {
-                            log::info!("Got error {}", e);
+                            log::error!("Got error {}", e);
                             Err(e)
                         }
                     }
@@ -146,7 +146,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     };
         
                     // Print out converted bson doc
-                    log::info!("Converted json into bson doc: {}", data);
+                    log::debug!("Converted json into bson doc: {}", data);
         
                     match db.find(&collection, data).await {
                         Ok(doc) => {
@@ -156,7 +156,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                             Ok(response)
                         },
                         Err(e) => {
-                            log::info!("Got error {}", e);
+                            log::error!("Got error {}", e);
                             Err(e)
                         }
                     }
@@ -187,7 +187,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                             Ok(response)
                         },
                         Err(e) => {
-                            log::info!("Got error {}", e);
+                            log::error!("Got error {}", e);
                             Err(e)
                         }
                     }

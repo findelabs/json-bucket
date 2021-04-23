@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
     let server = Server::bind(&addr).serve(service);
 
     println!(
-        "Starting json-bucket :{} on http://{}",
+        "Starting json-bucket:{} on http://{}",
         crate_version!(),
         addr
     );

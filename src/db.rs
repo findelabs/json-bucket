@@ -27,7 +27,7 @@ impl DB {
     pub async fn findone(&self, collection: &str, query: Document) -> Result<Document> {
 
         // Log which collection this is going into
-        log::info!("Searching {}.{}", self.db, collection);
+        log::debug!("Searching {}.{}", self.db, collection);
 
         let find_one_options = FindOneOptions::builder()
             .sort(doc! { "time": -1 })
@@ -40,11 +40,11 @@ impl DB {
             Ok(result) => {
                 match result {
                     Some(doc) => {
-                        log::info!("Found a result");
+                        log::debug!("Found a result");
                         Ok(doc)
                     },
                     None => {
-                        log::info!("No results found");
+                        log::debug!("No results found");
                         Ok(doc! { "msg": "no results found" })
                     }
                 }
@@ -59,7 +59,7 @@ impl DB {
     pub async fn find(&self, collection: &str, query: Document) -> Result<Vec<Document>> {
 
         // Log which collection this is going into
-        log::info!("Searching {}.{}", self.db, collection);
+        log::debug!("Searching {}.{}", self.db, collection);
 
         let find_options = FindOptions::builder()
             .sort(doc! { "time": -1 })
@@ -86,7 +86,7 @@ impl DB {
     pub async fn insert(&self, collection: &str, mut mongodoc: Document) -> Result<String> {
 
         // Log which collection this is going into
-        log::info!("Inserting doc into {}.{}", self.db, collection);
+        log::debug!("Inserting doc into {}.{}", self.db, collection);
 
         let now = Utc::now();
         mongodoc.insert("_time", now);
@@ -102,15 +102,15 @@ impl DB {
 
     pub async fn collections(&self) -> Result<Vec<String>> {
         // Log that we are trying to list collections
-        log::info!("Getting collections in {}", self.db);
+        log::debug!("Getting collections in {}", self.db);
 
         match self.client.database(&self.db).list_collection_names(None).await {
             Ok(collections) => {
-                log::info!("Success listing collections in {}", self.db);
+                log::debug!("Success listing collections in {}", self.db);
                 Ok(collections)
             },
             Err(e) => {
-                log::info!("Got error {}", e);
+                log::error!("Got error {}", e);
                 Err(MyError::MongodbError)
             }
         }
