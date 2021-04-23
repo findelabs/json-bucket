@@ -22,7 +22,7 @@ impl fmt::Display for MyError {
             MyError::UtfError => f.write_str("Utf conversion Error"),
             MyError::MongodbError => f.write_str("MongoDB Error"),
             MyError::UrlParseError => f.write_str("Failed to parse url Error"),
-            MyError::BsonError=> f.write_str("Could not parse as bson doc"),
+            MyError::BsonError => f.write_str("Could not parse as bson doc"),
         }
     }
 }

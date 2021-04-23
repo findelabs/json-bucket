@@ -2,14 +2,14 @@ use chrono::prelude::*;
 use mongodb::bson::{doc, document::Document};
 //use mongodb::{options::ClientOptions, options::FindOptions, Client, Collection};
 use crate::error::MyError;
-use mongodb::{options::ClientOptions, Client, options::FindOneOptions, options::FindOptions};
+use mongodb::{options::ClientOptions, options::FindOneOptions, options::FindOptions, Client};
 //use serde::{Deserialize, Serialize};
 use futures::StreamExt;
 
 #[derive(Clone, Debug)]
 pub struct DB {
     pub client: Client,
-    pub db: String
+    pub db: String,
 }
 
 type Result<T> = std::result::Result<T, MyError>;
@@ -20,33 +20,30 @@ impl DB {
         client_options.app_name = Some("json-bucket".to_string());
         Ok(Self {
             client: Client::with_options(client_options)?,
-            db: db.to_owned()
+            db: db.to_owned(),
         })
     }
 
     pub async fn findone(&self, collection: &str, query: Document) -> Result<Document> {
-
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_one_options = FindOneOptions::builder()
             .sort(doc! { "time": -1 })
-            .projection( doc! { "_id" : 0, "_time" : 0 })
+            .projection(doc! { "_id" : 0 })
             .build();
 
         let collection = self.client.database(&self.db).collection(collection);
 
         match collection.find_one(query, find_one_options).await {
-            Ok(result) => {
-                match result {
-                    Some(doc) => {
-                        log::debug!("Found a result");
-                        Ok(doc)
-                    },
-                    None => {
-                        log::debug!("No results found");
-                        Ok(doc! { "msg": "no results found" })
-                    }
+            Ok(result) => match result {
+                Some(doc) => {
+                    log::debug!("Found a result");
+                    Ok(doc)
+                }
+                None => {
+                    log::debug!("No results found");
+                    Ok(doc! { "msg": "no results found" })
                 }
             },
             Err(e) => {
@@ -57,13 +54,12 @@ impl DB {
     }
 
     pub async fn find(&self, collection: &str, query: Document) -> Result<Vec<Document>> {
-
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_options = FindOptions::builder()
             .sort(doc! { "time": -1 })
-            .projection( doc! { "_id" : 0, "_time" : 0 })
+            .projection(doc! { "_id" : 0 })
             .limit(100)
             .build();
 
@@ -84,7 +80,6 @@ impl DB {
     }
 
     pub async fn insert(&self, collection: &str, mut mongodoc: Document) -> Result<String> {
-
         // Log which collection this is going into
         log::debug!("Inserting doc into {}.{}", self.db, collection);
 
@@ -104,11 +99,16 @@ impl DB {
         // Log that we are trying to list collections
         log::debug!("Getting collections in {}", self.db);
 
-        match self.client.database(&self.db).list_collection_names(None).await {
+        match self
+            .client
+            .database(&self.db)
+            .list_collection_names(None)
+            .await
+        {
             Ok(collections) => {
                 log::debug!("Success listing collections in {}", self.db);
                 Ok(collections)
-            },
+            }
             Err(e) => {
                 log::error!("Got error {}", e);
                 Err(MyError::MongodbError)
