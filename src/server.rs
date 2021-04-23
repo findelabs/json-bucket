@@ -176,6 +176,9 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
             // Match on path
             match path {
                 &"/_cat/collections" => {
+                    let path = req.uri().path();
+                    log::info!("Received GET to {}", &path);
+
                     match db.collections().await {
                         Ok(collections) => {
                             let json_doc = serde_json::to_string(&collections).expect("failed converting collection bson to json");
