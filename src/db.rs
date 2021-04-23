@@ -29,7 +29,7 @@ impl DB {
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_one_options = FindOneOptions::builder()
-            .sort(doc! { "time": -1 })
+            .sort(doc! { "time": 1 })
             .projection(doc! { "_id" : 0 })
             .build();
 
@@ -58,7 +58,7 @@ impl DB {
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_options = FindOptions::builder()
-            .sort(doc! { "time": -1 })
+            .sort(doc! { "time": 1 })
             .projection(doc! { "_id" : 0 })
             .limit(100)
             .build();
