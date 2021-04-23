@@ -1442,7 +1442,7 @@ dependencies = [
 [[package]]
 name = "rust_tools"
 version = "0.1.0"
-source = "git+https://github.com/findelabs/rust-tools.git?branch=master#337fcee807e123dcb89321f61ba7bc35623ca6df"
+source = "git+https://github.com/findelabs/rust-tools.git?branch=master#cd0fe067f2c3153042b6c1e709f77b4e3a56d2c9"
 dependencies = [
  "bson",
  "http",

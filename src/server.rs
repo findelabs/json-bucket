@@ -6,13 +6,15 @@ use rust_tools::strings::get_root_path;
 use std::error::Error;
 
 use crate::db;
-use crate::error;
+//use crate::error;
+
+type BoxResult<T> = Result<T,Box<dyn Error + Send + Sync>>;
 
 // This is the main handler, to catch any failures in the echo fn
 pub async fn main_handler(
     req: Request<Body>,
     db: db::DB,
-) -> Result<Response<Body>, Box<dyn Error + Send + Sync>> {
+) -> BoxResult<Response<Body>> {
     match echo(req, db).await {
         Ok(s) => {
             log::debug!("Handler got success");
@@ -29,7 +31,7 @@ pub async fn main_handler(
 
 // This is our service handler. It receives a Request, routes on its
 // path, and returns a Future of a Response.
-async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::MyError> {
+async fn echo(req: Request<Body>, db: db::DB) -> BoxResult<Response<Body>> {
     // Match on method
     match req.method() {
         &Method::POST => {
@@ -59,7 +61,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     // Convert string to bson
                     let data = match to_doc(value) {
                         Ok(d) => d,
-                        Err(_) => return Err(error::MyError::JsonError),
+                        Err(e) => return Err(e),
                     };
 
                     // Print out converted bson doc
@@ -75,7 +77,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         }
                         Err(e) => {
                             log::debug!("Got error {}", e);
-                            Err(e)
+                            Err(Box::new(e))
                         }
                     }
                 }
@@ -100,7 +102,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     // Convert string to bson
                     let data = match to_doc(value) {
                         Ok(d) => d,
-                        Err(_) => return Err(error::MyError::JsonError),
+                        Err(e) => return Err(e)
                     };
 
                     // Print out converted bson doc
@@ -116,7 +118,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(e)
+                            Err(Box::new(e))
                         }
                     }
                 }
@@ -141,7 +143,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                     // Convert string to bson
                     let data = match to_doc(value) {
                         Ok(d) => d,
-                        Err(_) => return Err(error::MyError::JsonError),
+                        Err(e) => return Err(e)
                     };
 
                     // Print out converted bson doc
@@ -157,7 +159,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(e)
+                            Err(Box::new(e))
                         }
                     }
                 }
@@ -189,7 +191,7 @@ async fn echo(req: Request<Body>, db: db::DB) -> Result<Response<Body>, error::M
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(e)
+                            Err(Box::new(e))
                         }
                     }
                 }
