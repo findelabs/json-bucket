@@ -22,7 +22,7 @@ pub async fn main_handler(
         }
         Err(e) => {
             log::debug!("Handler caught error: {}", e);
-            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\" }}", e)));
+            let mut response = Response::new(Body::from(format!("{{\"error\" : \"{}\"}}", e)));
             *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
             Ok(response)
         }
