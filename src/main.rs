@@ -23,9 +23,9 @@ async fn main() -> Result<()> {
         .author("Daniel F. <dan@findelabs.com>")
         .about("Main findereport site generator")
         .arg(
-            Arg::with_name("url")
+            Arg::with_name("uri")
                 .short("u")
-                .long("url")
+                .long("uri")
                 .required(true)
                 .value_name("URI")
                 .env("MONGODB_URI")
