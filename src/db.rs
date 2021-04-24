@@ -115,4 +115,23 @@ impl DB {
             }
         }
     }
+
+    pub async fn count(&self, collection: &str) -> Result<Document> {
+        // Log that we are trying to list collections
+        log::debug!("Getting document count in {}", self.db);
+
+        let collection = self.client.database(&self.db).collection(collection);
+
+        match collection.estimated_document_count(None).await {
+            Ok(count) => {
+                log::debug!("Successfully counted docs in {}", self.db);
+                let result = doc! {"docs" : count};
+                Ok(result)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
 }

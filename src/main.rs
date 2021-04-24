@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
         .init();
 
     // Read in config file
-    let url = &opts.value_of("url").unwrap();
+    let url = &opts.value_of("uri").unwrap();
     let db = &opts.value_of("db").unwrap();
     let port: u16 = opts.value_of("port").unwrap().parse().unwrap_or_else(|_| {
         eprintln!("specified port isn't in a valid range, setting to 8080");
