@@ -52,6 +52,13 @@ async fn main() -> Result<()> {
                 .default_value("8080")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("readonly")
+                .short("r")
+                .long("readonly")
+                .help("Only access database read-only")
+                .required(false)
+        )
         .get_matches();
 
     // Initialize log Builder
@@ -79,10 +86,11 @@ async fn main() -> Result<()> {
     let db = DB::init(&url, &db).await?;
     let addr = ([0, 0, 0, 0], port).into();
     let service = make_service_fn(move |_| {
+        let opts = opts.clone();
         let db = db.clone();
         async move {
             Ok::<_, hyper::Error>(service_fn(move |req: Request<Body>| {
-                server::main_handler(req, db.clone())
+                server::main_handler(opts.clone(), req, db.clone())
             }))
         }
     });

@@ -5,6 +5,7 @@ use crate::error::MyError;
 use mongodb::{options::ClientOptions, options::FindOneOptions, options::FindOptions, Client};
 //use serde::{Deserialize, Serialize};
 use futures::StreamExt;
+use clap::ArgMatches;
 
 #[derive(Clone, Debug)]
 pub struct DB {
@@ -29,7 +30,7 @@ impl DB {
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_one_options = FindOneOptions::builder()
-            .sort(doc! { "time": 1 })
+            .sort(doc! { "_id": -1 })
             .projection(doc! { "_id" : 0 })
             .build();
 
@@ -58,7 +59,7 @@ impl DB {
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_options = FindOptions::builder()
-            .sort(doc! { "time": 1 })
+            .sort(doc! { "_id": -1 })
             .projection(doc! { "_id" : 0 })
             .limit(100)
             .build();
@@ -79,9 +80,17 @@ impl DB {
         Ok(result)
     }
 
-    pub async fn insert(&self, collection: &str, mut mongodoc: Document) -> Result<String> {
-        // Log which collection this is going into
-        log::debug!("Inserting doc into {}.{}", self.db, collection);
+    pub async fn insert(&self, opts: ArgMatches<'_>, collection: &str, mut mongodoc: Document) -> Result<String> {
+        match opts.is_present("readonly") {
+            true => {
+                log::error!("Rejecting post, as we are in readonly mode");
+                return Err(MyError::ReadOnly)
+            }
+            _ => {
+                // Log which collection this is going into
+                log::debug!("Inserting doc into {}.{}", self.db, collection);
+            }
+        };
 
         let now = Utc::now();
         mongodoc.insert("_time", now);
