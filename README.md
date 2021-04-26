@@ -30,8 +30,8 @@ curl -s localhost:8080/published/_count
 ```
 json-bucket --db $MONGODB_DB --url $MONGODB_URI
 ```
-db: MongoDB database to utilize, can be passed as env var MONGODB_DB.
-uri: MongoDB uri, can also be passed as env var MONGODB_URI
+db: MongoDB database to utilize, can be passed as env var MONGODB_DB  
+uri: MongoDB uri, can also be passed as env var MONGODB_URI. 
 
 ### ToDo
 
