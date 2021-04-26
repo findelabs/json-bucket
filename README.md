@@ -7,35 +7,35 @@ A simple app that connects to a MongoDB and acts as a "dropbox" for json blobs. 
 
 Assuming that "published" is the name of a collection, then all of these apply:
 
-Search for a single document in a collection, using MongoDB Regex:
+**Search for a single document in a collection, using MongoDB Regex:**
 ```
 curl -s localhost:8080/published/_find_one -d '{"summary": {"$regex": ".*interesting.*"}}'
 ```
 
-Search for many documents in a collection, based on a simple query:
+**Search for many documents in a collection, based on a simple query:**
 ```
 curl -s localhost:8080/published/_find -d '{"summary": "this is my summary"}'
 ```
 Note: finds are limited to 100 returned docs for now.
 
-Search for many documents, and and specify which fields to return:
+**Search for many documents, and and specify which fields to return:**
 ```
 curl -s localhost:8080/published/_find_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
 ```
 
-Return a count of documents in a collection:
+**Return a count of documents in a collection:**
 ```
 curl -s localhost:8080/published/_count
 ```
 
-List indexes in collection
+**List indexes in collection:**
 ```
 curl -s localhost:8080/published/_indexes
 ```
 
 ### Interacting with the Database
 
-List the collections in the database:
+**List the collections in the database:**
 ```
 curl -s localhost:8080/_cat/collections
 ```
@@ -46,7 +46,8 @@ curl -s localhost:8080/_cat/collections
 json-bucket --db $MONGODB_DB --url $MONGODB_URI
 ```
 db: MongoDB database to utilize, can be passed as env var MONGODB_DB  
-uri: MongoDB uri, can also be passed as env var MONGODB_URI. 
+uri: MongoDB uri, can also be passed as env var MONGODB_URI
+readonly: Access the database read-only
 
 ### ToDo
 
