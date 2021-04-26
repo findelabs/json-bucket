@@ -3,7 +3,9 @@
 A simple app that connects to a MongoDB and acts as a "dropbox" for json blobs. This application exposes an ElasticSearch-inspired REST API, to enable quick and easy searches through http.
 
 
-### Usage
+### Interacting with Collections
+
+Assuming that "published" is the name of a collection, then all of these apply:
 
 Search for a single document in a collection, using MongoDB Regex:
 ```
@@ -25,6 +27,19 @@ Return a count of documents in a collection:
 ```
 curl -s localhost:8080/published/_count
 ```
+
+List indexes in collection
+```
+curl -s localhost:8080/published/_indexes
+```
+
+### Interacting with the Database
+
+List the collections in the database:
+```
+curl -s localhost:8080/_cat/collections
+```
+
 
 ### Running json-bucket
 ```
