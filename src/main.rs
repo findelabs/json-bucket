@@ -3,7 +3,6 @@ use clap::{crate_version, App, Arg};
 use env_logger::Builder;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Server};
-use log::LevelFilter;
 use std::io::Write;
 
 use db::DB;
@@ -71,7 +70,6 @@ async fn main() -> Result<()> {
                 record.args()
             )
         })
-        .filter(None, LevelFilter::Info)
         .init();
 
     // Read in config file
