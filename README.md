@@ -1,13 +1,37 @@
 ## JSON-Bucket
 
-A simple app that connects to a MongoDB and acts as a "dropbox" for json blobs. This api accepts posts to the endpoint https://${server}/${collection}/create, and can query the posted documents using filters posted to http://${server}/collection/find or http://${server}/collection/findone. 
+A simple app that connects to a MongoDB and acts as a "dropbox" for json blobs. This application exposes an ElasticSearch-inspired REST API, to enable quick and easy searches through http.
+
 
 ### Usage
 
-json-bucket --db $MONGODB_DB --url $MONGODB_URI
+Search for a single document in a collection, using MongoDB Regex:
+```
+curl -s localhost:8080/published/_find_one -d '{"summary": {"$regex": ".*interesting.*"}}'
+```
 
---db: MongoDB database to utilize, can be passed as env var MONGODB_DB.
---uri: MongoDB uri, can be passed as env var MONGODB_URI
+Search for many documents in a collection, based on a simple query:
+```
+curl -s localhost:8080/published/_find -d '{"summary": "this is my summary"}'
+```
+Note: finds are limited to 100 returned docs for now.
+
+Search for many documents, and and specify which fields to return:
+```
+curl -s localhost:8080/published/_find_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
+```
+
+Return a count of documents in a collection:
+```
+curl -s localhost:8080/published/_count
+```
+
+### Running json-bucket
+```
+json-bucket --db $MONGODB_DB --url $MONGODB_URI
+```
+db: MongoDB database to utilize, can be passed as env var MONGODB_DB.
+uri: MongoDB uri, can also be passed as env var MONGODB_URI
 
 ### ToDo
 
