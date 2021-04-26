@@ -23,6 +23,11 @@ Note: finds are limited to 100 returned docs for now.
 curl -s localhost:8080/published/_find_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
 ```
 
+**Search for one document, and and specify which fields to return:**
+```
+curl -s localhost:8080/published/_find_one_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
+```
+
 **Return a count of documents in a collection:**
 ```
 curl -s localhost:8080/published/_count
