@@ -7,25 +7,30 @@ A simple app that connects to a MongoDB and acts as a "dropbox" for json blobs. 
 
 Assuming that "published" is the name of a collection, then all of these apply:
 
+**Create a new document in MongoDB**
+```
+curl localhost:8080/published/_insert -d '{"title": "This is a title", "summary": "The summary of the article"}'
+```
+
 **Search for a single document in a collection, using MongoDB Regex:**
 ```
-curl -s localhost:8080/published/_find_one -d '{"summary": {"$regex": ".*interesting.*"}}'
+curl -s localhost:8080/published/_find_one -d '{"summary": {"$regex": ".*article.*"}}'
 ```
 
 **Search for many documents in a collection, based on a simple query:**
 ```
-curl -s localhost:8080/published/_find -d '{"summary": "this is my summary"}'
+curl -s localhost:8080/published/_find -d '{"title": "This is a title"}'
 ```
 Note: finds are limited to 100 returned docs for now.
 
 **Search for many documents, and and specify which fields to return:**
 ```
-curl -s localhost:8080/published/_find_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
+curl -s localhost:8080/published/_find_project -d '[{"summary": {"$regex": ".*summary.*"}},{"summary": 1, "_id": 0}]'
 ```
 
 **Search for one document, and and specify which fields to return:**
 ```
-curl -s localhost:8080/published/_find_one_project -d '[{"summary": {"$regex": ".*test.*"}},{"summary": 1, "_id": 0}]'
+curl -s localhost:8080/published/_find_one_project -d '[{"summary": {"$regex": ".*summary.*"}},{"summary": 1, "_id": 0}]'
 ```
 
 **Return a count of documents in a collection:**
