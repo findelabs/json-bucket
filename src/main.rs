@@ -1,6 +1,7 @@
 use chrono::Local;
 use clap::{crate_version, App, Arg};
-use env_logger::Builder;
+use env_logger::{Builder, Target};
+use log::LevelFilter;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Server};
 use std::io::Write;
@@ -70,6 +71,9 @@ async fn main() -> Result<()> {
                 record.args()
             )
         })
+        .target(Target::Stdout)
+        .filter_level(LevelFilter::Error)
+        .parse_default_env()
         .init();
 
     // Read in config file
