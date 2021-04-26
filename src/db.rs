@@ -54,13 +54,13 @@ impl DB {
         }
     }
 
-    pub async fn find(&self, collection: &str, query: Document) -> Result<Vec<Document>> {
+    pub async fn find(&self, collection: &str, query: Document, projection: Option<Document>) -> Result<Vec<Document>> {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_options = FindOptions::builder()
             .sort(doc! { "_id": -1 })
-            .projection(doc! { "_id" : 0 })
+            .projection(projection)
             .limit(100)
             .build();
 
@@ -136,6 +136,26 @@ impl DB {
                 log::debug!("Successfully counted docs in {}", self.db);
                 let result = doc! {"docs" : count};
                 Ok(result)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn get_indexes(&self, collection: &str) -> Result<Document> {
+        // Log that we are trying to list collections
+        log::debug!("Getting indexes in {}", self.db);
+
+        let database = self.client.database(&self.db);
+        let command = doc! { "listIndexes": collection };
+
+        match database.run_command(command, None).await {
+            Ok(indexes) => {
+                log::debug!("Successfully got indexes in {}.{}", self.db, collection);
+                let index_cursor = indexes.get_document("cursor").expect("Successfully got indexes, but failed to extract cursor").clone();
+                Ok(index_cursor)
             }
             Err(e) => {
                 log::error!("Got error {}", e);
