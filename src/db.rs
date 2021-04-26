@@ -25,13 +25,13 @@ impl DB {
         })
     }
 
-    pub async fn findone(&self, collection: &str, query: Document) -> Result<Document> {
+    pub async fn findone(&self, collection: &str, query: Document, projection: Option<Document>) -> Result<Document> {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
         let find_one_options = FindOneOptions::builder()
             .sort(doc! { "_id": -1 })
-            .projection(doc! { "_id" : 0 })
+            .projection(projection)
             .build();
 
         let collection = self.client.database(&self.db).collection(collection);

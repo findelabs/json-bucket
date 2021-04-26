@@ -105,7 +105,40 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                     // Get data and collection
                     let (collection, data) = data_to_bson(req).await?;
 
-                    match db.findone(&collection, data).await {
+                    match db.findone(&collection, data, None).await {
+                        Ok(doc) => {
+                            let json_doc = serde_json::to_string(&doc)
+                                .expect("failed converting bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                }
+                (&Method::POST, &"_find_one_project") => {
+                    let path = req.uri().path();
+                    log::info!("Received POST to {}", &path);
+
+                    // Get data and collection
+                    let (collection, mut data) = data_to_bson_vec(req).await?;
+
+                    // Get query
+                    let query = match data.len(){
+                        0 => doc! {},
+                        _ => data.swap_remove(0)
+                    };
+
+                    // Get projection
+                    let projection = match data.len(){
+                        0 => None,
+                        _ => Some(data.swap_remove(0))
+                    };
+
+                    match db.findone(&collection, query, projection).await {
                         Ok(doc) => {
                             let json_doc = serde_json::to_string(&doc)
                                 .expect("failed converting bson to json");
