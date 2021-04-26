@@ -29,9 +29,14 @@ impl DB {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
+        let project = match projection {
+            Some(project) => Some(project),
+            None => Some(doc! {"_id": 0})
+        };
+
         let find_one_options = FindOneOptions::builder()
             .sort(doc! { "_id": -1 })
-            .projection(projection)
+            .projection(project)
             .build();
 
         let collection = self.client.database(&self.db).collection(collection);
@@ -58,9 +63,14 @@ impl DB {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
+        let project = match projection {
+            Some(project) => Some(project),
+            None => Some(doc! {"_id": 0})
+        };
+
         let find_options = FindOptions::builder()
             .sort(doc! { "_id": -1 })
-            .projection(projection)
+            .projection(project)
             .limit(100)
             .build();
 
