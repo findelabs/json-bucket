@@ -56,7 +56,7 @@ curl -s localhost:8080/_cat/collections
 json-bucket --db $MONGODB_DB --url $MONGODB_URI
 ```
 db: MongoDB database to utilize, can be passed as env var MONGODB_DB  
-uri: MongoDB uri, can also be passed as env var MONGODB_URI
+uri: MongoDB uri, can also be passed as env var MONGODB_URI  
 readonly: Access the database read-only
 
 ### ToDo
