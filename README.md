@@ -12,6 +12,11 @@ Assuming that "published" is the name of a collection, then all of these apply:
 curl localhost:8080/published/_insert -d '{"title": "This is a title", "summary": "The summary of the article"}'
 ```
 
+**Create many documents into MongoDB**
+```
+curl localhost:8080/published/_insert_many -d '[{"title": "This is a title", "summary": "The summary of the article"},{"title": "This this second title"}]'
+```
+
 **Search for a single document in a collection, using MongoDB Regex:**
 ```
 curl -s localhost:8080/published/_find_one -d '{"summary": {"$regex": ".*article.*"}}'
