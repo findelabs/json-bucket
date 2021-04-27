@@ -6,6 +6,8 @@ use mongodb::{options::ClientOptions, options::FindOneOptions, options::FindOpti
 //use serde::{Deserialize, Serialize};
 use futures::StreamExt;
 use clap::ArgMatches;
+use std::collections::HashMap;
+use bson::Bson;
 
 #[derive(Clone, Debug)]
 pub struct DB {
@@ -107,6 +109,33 @@ impl DB {
         let collection = self.client.database(&self.db).collection(collection);
         match collection.insert_one(mongodoc, None).await {
             Ok(id) => Ok(id.inserted_id.to_string()),
+            Err(e) => {
+                log::error!("Error inserting into mongodb: {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn insert_many(&self, opts: ArgMatches<'_>, collection: &str, mut mongodocs: Vec<Document>) -> Result<HashMap<usize, Bson>> {
+        match opts.is_present("readonly") {
+            true => {
+                log::error!("Rejecting post, as we are in readonly mode");
+                return Err(MyError::ReadOnly)
+            }
+            _ => {
+                // Log which collection this is going into
+                log::debug!("Inserting doc into {}.{}", self.db, collection);
+            }
+        };
+
+        let now = Utc::now();
+        for mongodoc in mongodocs.iter_mut() {
+            mongodoc.insert("_time", now);
+        };
+
+        let collection = self.client.database(&self.db).collection(collection);
+        match collection.insert_many(mongodocs, None).await {
+            Ok(id) => Ok(id.inserted_ids),
             Err(e) => {
                 log::error!("Error inserting into mongodb: {}", e);
                 Err(MyError::MongodbError)

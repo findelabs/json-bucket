@@ -98,6 +98,27 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                     }
                 }
+                (&Method::POST, &"_insert_many") => {
+                    let path = req.uri().path();
+                    log::info!("Received POST to {}", &path);
+
+                    // Get data and collection
+                    let (collection, data) = data_to_bson_vec(req).await?;
+
+                    match db.insert_many(opts, &collection, data).await {
+                        Ok(doc) => {
+                            let json_doc = serde_json::to_string(&doc)
+                                .expect("failed converting bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                }
                 (&Method::POST, &"_find_one") => {
                     let path = req.uri().path();
                     log::info!("Received POST to {}", &path);
