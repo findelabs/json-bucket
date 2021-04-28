@@ -227,6 +227,27 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                     }
                 }
+                (&Method::POST, &"_aggregate") => {
+                    let path = req.uri().path();
+                    log::info!("Received POST to {}", &path);
+
+                    // Get data and collection
+                    let (collection, data) = data_to_bson_vec(req).await?;
+
+                    match db.aggregate(&collection, data).await {
+                        Ok(doc) => {
+                            let json_doc = serde_json::to_string(&doc)
+                                .expect("failed converting bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                }
                 (&Method::GET, &"_count") => {
                     log::info!("Received GET to {}", req.uri().path());
 

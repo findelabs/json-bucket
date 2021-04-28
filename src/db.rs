@@ -143,6 +143,22 @@ impl DB {
         }
     }
 
+    pub async fn aggregate(&self, collection: &str, pipeline: Vec<Document>) -> Result<Vec<Document>> {
+        let collection = self.client.database(&self.db).collection(collection);
+        let mut cursor = collection.aggregate(pipeline, None).await?;
+
+        let mut result: Vec<Document> = Vec::new();
+        while let Some(doc) = cursor.next().await {
+            match doc {
+                Ok(converted) => result.push(converted),
+                Err(e) => {
+                    log::error!("Caught error, skipping: {}", e);
+                    continue;
+                }
+            }
+        }
+        Ok(result)
+    }
     pub async fn collections(&self) -> Result<Vec<String>> {
         // Log that we are trying to list collections
         log::debug!("Getting collections in {}", self.db);
