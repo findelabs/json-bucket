@@ -98,6 +98,27 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                     }
                 }
+                (&Method::POST, &"_update_one") => {
+                    let path = req.uri().path();
+                    log::info!("Received POST to {}", &path);
+
+                    // Get data and collection
+                    let (collection, data) = data_to_bson_vec(req).await?;
+
+                    match db.update_one(opts, &collection, data).await {
+                        Ok(body) => {
+                            let mut response = Response::new(Body::from(format!(
+                                "{{\"msg\" : \"{}\" }}", body
+                            )));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                }
                 (&Method::POST, &"_insert_many") => {
                     let path = req.uri().path();
                     log::info!("Received POST to {}", &path);

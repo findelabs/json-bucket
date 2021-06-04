@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use mongodb::bson::{doc, document::Document};
 //use mongodb::{options::ClientOptions, options::FindOptions, Client, Collection};
 use crate::error::MyError;
-use mongodb::{options::ClientOptions, options::FindOneOptions, options::FindOptions, Client};
+use mongodb::{options::ClientOptions, options::FindOneOptions, options::FindOptions, options::UpdateOptions, Client};
 //use serde::{Deserialize, Serialize};
 use futures::StreamExt;
 use clap::ArgMatches;
@@ -136,6 +136,43 @@ impl DB {
         let collection = self.client.database(&self.db).collection(collection);
         match collection.insert_many(mongodocs, None).await {
             Ok(id) => Ok(id.inserted_ids),
+            Err(e) => {
+                log::error!("Error inserting into mongodb: {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn update_one(&self, opts: ArgMatches<'_>, collection: &str, mongodocs: Vec<Document>) -> Result<String> {
+        match opts.is_present("readonly") {
+            true => {
+                log::error!("Rejecting post, as we are in readonly mode");
+                return Err(MyError::ReadOnly)
+            }
+            _ => {
+                // Log which collection this is going into
+                log::debug!("Inserting doc into {}.{}", self.db, collection);
+            }
+        };
+
+        let now = Utc::now();
+
+        let filter = mongodocs[0].clone();
+        let mut mongodoc = mongodocs[1].clone();
+        mongodoc.insert("_time", now);
+
+        let update_options = UpdateOptions::builder()
+            .upsert(true)
+            .build();
+
+        let collection = self.client.database(&self.db).collection(collection);
+        match collection.update_one(filter, mongodoc, update_options).await {
+            Ok(result) => {
+                match result.upserted_id {
+                    Some(_) => Ok("Created new doc".to_owned()),
+                    None => Ok("Updated existing doc".to_owned())
+                }
+            },
             Err(e) => {
                 log::error!("Error inserting into mongodb: {}", e);
                 Err(MyError::MongodbError)
