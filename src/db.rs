@@ -71,7 +71,7 @@ impl DB {
         };
 
         let find_options = FindOptions::builder()
-            .sort(doc! { "_id": -1 })
+            .sort(doc! { "_id": 1 })
             .projection(project)
             .limit(100)
             .build();
