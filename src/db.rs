@@ -71,7 +71,7 @@ impl DB {
         };
 
         let find_options = FindOptions::builder()
-            .sort(doc! { "_id": 1 })
+            .sort(doc! { "_id": -1 })
             .projection(project)
             .limit(100)
             .build();
@@ -89,6 +89,7 @@ impl DB {
                 }
             }
         }
+        let result = result.into_iter().rev().collect();
         Ok(result)
     }
 
@@ -194,6 +195,7 @@ impl DB {
                 }
             }
         }
+        let result = result.into_iter().rev().collect();
         Ok(result)
     }
     pub async fn collections(&self) -> Result<Vec<String>> {
@@ -246,8 +248,84 @@ impl DB {
         match database.run_command(command, None).await {
             Ok(indexes) => {
                 log::debug!("Successfully got indexes in {}.{}", self.db, collection);
-                let index_cursor = indexes.get_document("cursor").expect("Successfully got indexes, but failed to extract cursor").clone();
-                Ok(index_cursor)
+                let results = indexes.get_document("cursor").expect("Successfully got indexes, but failed to extract cursor").clone();
+                Ok(results)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn rs_status(&self) -> Result<Document> {
+        // Log that we are trying to list collections
+        log::debug!("Getting replSetGetStatus");
+
+        let database = self.client.database("admin");
+        let command = doc! { "replSetGetStatus": 1};
+
+        match database.run_command(command, None).await {
+            Ok(output) => {
+                log::debug!("Successfully got replSetGetStatus");
+                Ok(output)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn get_log(&self) -> Result<Vec<Bson>> {
+        // Log that we are trying to list collections
+        log::debug!("Getting getLog");
+
+        let database = self.client.database("admin");
+        let command = doc! { "getLog": "global"};
+
+        match database.run_command(command, None).await {
+            Ok(output) => {
+                let results = output.get_array("log").expect("Failed to get log field").clone();
+                log::debug!("Successfully got getLog");
+                Ok(results)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn server_status(&self) -> Result<Document> {
+        // Log that we are trying to list collections
+        log::debug!("Getting serverStatus");
+
+        let database = self.client.database("admin");
+        let command = doc! { "serverStatus": 1};
+
+        match database.run_command(command, None).await {
+            Ok(output) => {
+                log::debug!("Successfully got serverStatus");
+                Ok(output)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn inprog(&self) -> Result<Document> {
+        log::debug!("Getting inprog");
+
+        let database = self.client.database("admin");
+        let command = doc! { "currentOp": 1};
+
+        match database.run_command(command, None).await {
+            Ok(output) => {
+                log::debug!("Successfully got inprog");
+                Ok(output)
             }
             Err(e) => {
                 log::error!("Got error {}", e);

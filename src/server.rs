@@ -64,6 +64,78 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                             Err(Box::new(e))
                         }
                     }
+                },
+                (&Method::GET, &"/_cat/rs/status") => {
+                    let path = req.uri().path();
+                    log::info!("Received GET to {}", &path);
+        
+                    match db.rs_status().await {
+                        Ok(results) => {
+                            let json_doc = serde_json::to_string(&results)
+                                .expect("failed converting collection bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                },
+                (&Method::GET, &"/_cat/rs/log") => {
+                    let path = req.uri().path();
+                    log::info!("Received GET to {}", &path);
+        
+                    match db.get_log().await {
+                        Ok(results) => {
+                            let json_doc = serde_json::to_string(&results)
+                                .expect("failed converting collection bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                },
+                (&Method::GET, &"/_cat/rs/stats") => {
+                    let path = req.uri().path();
+                    log::info!("Received GET to {}", &path);
+        
+                    match db.server_status().await {
+                        Ok(results) => {
+                            let json_doc = serde_json::to_string(&results)
+                                .expect("failed converting collection bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                },
+                (&Method::GET, &"/_cat/rs/operations") => {
+                    let path = req.uri().path();
+                    log::info!("Received GET to {}", &path);
+        
+                    match db.inprog().await {
+                        Ok(results) => {
+                            let json_doc = serde_json::to_string(&results)
+                                .expect("failed converting collection bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
                 }
                 _ => Ok(Response::new(Body::from(format!(
                     "{{ \"msg\" : \"{} is not a known path under /_cat\" }}",
