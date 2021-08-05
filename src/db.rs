@@ -316,7 +316,7 @@ impl DB {
         }
     }
 
-    pub async fn inprog(&self) -> Result<Document> {
+    pub async fn inprog(&self) -> Result<Vec<Bson>> {
         log::debug!("Getting inprog");
 
         let database = self.client.database("admin");
@@ -325,7 +325,27 @@ impl DB {
         match database.run_command(command, None).await {
             Ok(output) => {
                 log::debug!("Successfully got inprog");
-                Ok(output)
+                let results = output.get_array("inprog").expect("Failed to get log field").clone();
+                Ok(results)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
+
+    pub async fn top(&self) -> Result<Document> {
+        log::debug!("Getting top");
+
+        let database = self.client.database("admin");
+        let command = doc! { "top": 1};
+
+        match database.run_command(command, None).await {
+            Ok(output) => {
+                log::debug!("Successfully got top");
+                let results = output.get_document("totals").expect("Failed to get log field").clone();
+                Ok(results)
             }
             Err(e) => {
                 log::error!("Got error {}", e);
