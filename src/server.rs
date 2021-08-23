@@ -401,6 +401,27 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                     }
                 },
+                (&Method::GET, &"_index_stats") => {
+                    log::info!("Received GET to {}", req.uri().path());
+
+                    // Get short root path (the collection name)
+                    let (parts, _body) = req.into_parts();
+                    let collection = get_root_path(&parts);
+
+                    match db.index_stats(&collection).await {
+                        Ok(doc) => {
+                            let json_doc = serde_json::to_string(&doc)
+                                .expect("failed converting bson to json");
+                            let mut response = Response::new(Body::from(json_doc));
+                            *response.status_mut() = StatusCode::OK;
+                            Ok(response)
+                        }
+                        Err(e) => {
+                            log::error!("Got error {}", e);
+                            Err(Box::new(e))
+                        }
+                    }
+                },
                 _ => Ok(Response::new(Body::from(format!(
                     "{{ \"msg\" : \"{} {} is not a recognized action\" }}",
                     req.method(),

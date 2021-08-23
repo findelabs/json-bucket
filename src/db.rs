@@ -353,4 +353,24 @@ impl DB {
             }
         }
     }
+
+    pub async fn index_stats(&self, collection: &str) -> Result<Vec<Document>> {
+        log::debug!("Getting index stats");
+
+        let mut commands = Vec::new();
+
+        let command = doc! { "$indexStats": {}};
+        commands.push(command);
+
+        match self.aggregate(collection, commands).await {
+            Ok(output) => {
+                log::debug!("Successfully got IndexStats");
+                Ok(output)
+            }
+            Err(e) => {
+                log::error!("Got error {}", e);
+                Err(MyError::MongodbError)
+            }
+        }
+    }
 }
