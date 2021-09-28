@@ -105,10 +105,9 @@ async fn main() -> Result<()> {
         addr
     );
 
-    server.await?;
-    //    if let Err(e) = server.await {
-    //        eprintln!("server error: {}", e);
-    //    }
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
 
     Ok(())
 }
