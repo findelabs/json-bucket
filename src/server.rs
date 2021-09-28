@@ -6,7 +6,7 @@ use rust_tools::bson::{to_doc, to_doc_vec};
 use rust_tools::strings::get_root_path;
 use std::error::Error;
 use clap::ArgMatches;
-use bson::Document;
+use bson::document::Document;
 use crate::db;
 
 type BoxResult<T> = Result<T,Box<dyn Error + Send + Sync>>;
@@ -61,7 +61,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -79,7 +79,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -97,7 +97,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -115,7 +115,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -133,7 +133,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -151,7 +151,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -184,7 +184,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::debug!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -205,7 +205,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -226,7 +226,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -247,7 +247,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -280,7 +280,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -301,7 +301,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -334,7 +334,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -355,7 +355,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 }
@@ -376,7 +376,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -397,7 +397,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },
@@ -418,7 +418,7 @@ async fn echo(opts: ArgMatches<'_>, req: Request<Body>, db: db::DB) -> BoxResult
                         }
                         Err(e) => {
                             log::error!("Got error {}", e);
-                            Err(Box::new(e))
+                            Err(e)
                         }
                     }
                 },

@@ -5,15 +5,16 @@ use log::LevelFilter;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Server};
 use std::io::Write;
+use std::error::Error;
 
 use db::DB;
-use error::MyError;
+//use error::MyError;
 
 mod db;
 mod error;
 mod server;
 
-type Result<T> = std::result::Result<T, MyError>;
+type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {

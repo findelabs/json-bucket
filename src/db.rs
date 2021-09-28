@@ -8,6 +8,7 @@ use futures::StreamExt;
 use clap::ArgMatches;
 use std::collections::HashMap;
 use bson::Bson;
+use std::error::Error;
 
 #[derive(Clone, Debug)]
 pub struct DB {
@@ -15,10 +16,11 @@ pub struct DB {
     pub db: String,
 }
 
-type Result<T> = std::result::Result<T, MyError>;
+type BoxResult<T> = Result<T,Box<dyn Error + Send + Sync>>;
+//type Result<T> = std::result::Result<T, MyError>;
 
 impl DB {
-    pub async fn init(url: &str, db: &str) -> Result<Self> {
+    pub async fn init(url: &str, db: &str) -> BoxResult<Self> {
         let mut client_options = ClientOptions::parse(url).await?;
         client_options.app_name = Some("json-bucket".to_string());
         Ok(Self {
@@ -27,7 +29,7 @@ impl DB {
         })
     }
 
-    pub async fn findone(&self, collection: &str, query: Document, projection: Option<Document>) -> Result<Document> {
+    pub async fn findone(&self, collection: &str, query: Document, projection: Option<Document>) -> BoxResult<Document> {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
@@ -41,7 +43,7 @@ impl DB {
             .projection(project)
             .build();
 
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
 
         match collection.find_one(query, find_one_options).await {
             Ok(result) => match result {
@@ -56,12 +58,12 @@ impl DB {
             },
             Err(e) => {
                 log::error!("Error searching mongodb: {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn find(&self, collection: &str, query: Document, projection: Option<Document>) -> Result<Vec<Document>> {
+    pub async fn find(&self, collection: &str, query: Document, projection: Option<Document>) -> BoxResult<Vec<Document>> {
         // Log which collection this is going into
         log::debug!("Searching {}.{}", self.db, collection);
 
@@ -76,7 +78,7 @@ impl DB {
             .limit(100)
             .build();
 
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
         let mut cursor = collection.find(query, find_options).await?;
 
         let mut result: Vec<Document> = Vec::new();
@@ -93,11 +95,11 @@ impl DB {
         Ok(result)
     }
 
-    pub async fn insert(&self, opts: ArgMatches<'_>, collection: &str, mut mongodoc: Document) -> Result<String> {
+    pub async fn insert(&self, opts: ArgMatches<'_>, collection: &str, mut mongodoc: Document) -> BoxResult<String> {
         match opts.is_present("readonly") {
             true => {
                 log::error!("Rejecting post, as we are in readonly mode");
-                return Err(MyError::ReadOnly)
+                return Err(Box::new(MyError::ReadOnly))
             }
             _ => {
                 // Log which collection this is going into
@@ -107,21 +109,21 @@ impl DB {
 
         let now = Utc::now();
         mongodoc.insert("_time", now);
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
         match collection.insert_one(mongodoc, None).await {
             Ok(id) => Ok(id.inserted_id.to_string()),
             Err(e) => {
                 log::error!("Error inserting into mongodb: {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn insert_many(&self, opts: ArgMatches<'_>, collection: &str, mut mongodocs: Vec<Document>) -> Result<HashMap<usize, Bson>> {
+    pub async fn insert_many(&self, opts: ArgMatches<'_>, collection: &str, mut mongodocs: Vec<Document>) -> BoxResult<HashMap<usize, Bson>> {
         match opts.is_present("readonly") {
             true => {
                 log::error!("Rejecting post, as we are in readonly mode");
-                return Err(MyError::ReadOnly)
+                return Err(Box::new(MyError::ReadOnly))
             }
             _ => {
                 // Log which collection this is going into
@@ -134,21 +136,21 @@ impl DB {
             mongodoc.insert("_time", now);
         };
 
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
         match collection.insert_many(mongodocs, None).await {
             Ok(id) => Ok(id.inserted_ids),
             Err(e) => {
                 log::error!("Error inserting into mongodb: {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn update_one(&self, opts: ArgMatches<'_>, collection: &str, mongodocs: Vec<Document>) -> Result<String> {
+    pub async fn update_one(&self, opts: ArgMatches<'_>, collection: &str, mongodocs: Vec<Document>) -> BoxResult<String> {
         match opts.is_present("readonly") {
             true => {
                 log::error!("Rejecting post, as we are in readonly mode");
-                return Err(MyError::ReadOnly)
+                return Err(Box::new(MyError::ReadOnly))
             }
             _ => {
                 // Log which collection this is going into
@@ -166,7 +168,7 @@ impl DB {
             .upsert(true)
             .build();
 
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
         match collection.update_one(filter, mongodoc, update_options).await {
             Ok(result) => {
                 match result.upserted_id {
@@ -176,13 +178,13 @@ impl DB {
             },
             Err(e) => {
                 log::error!("Error inserting into mongodb: {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn aggregate(&self, collection: &str, pipeline: Vec<Document>) -> Result<Vec<Document>> {
-        let collection = self.client.database(&self.db).collection(collection);
+    pub async fn aggregate(&self, collection: &str, pipeline: Vec<Document>) -> BoxResult<Vec<Document>> {
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
         let mut cursor = collection.aggregate(pipeline, None).await?;
 
         let mut result: Vec<Document> = Vec::new();
@@ -198,7 +200,7 @@ impl DB {
         let result = result.into_iter().rev().collect();
         Ok(result)
     }
-    pub async fn collections(&self) -> Result<Vec<String>> {
+    pub async fn collections(&self) -> BoxResult<Vec<String>> {
         // Log that we are trying to list collections
         log::debug!("Getting collections in {}", self.db);
 
@@ -214,31 +216,31 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn count(&self, collection: &str) -> Result<Document> {
+    pub async fn count(&self, collection: &str) -> BoxResult<Document> {
         // Log that we are trying to list collections
         log::debug!("Getting document count in {}", self.db);
 
-        let collection = self.client.database(&self.db).collection(collection);
+        let collection = self.client.database(&self.db).collection::<Document>(collection);
 
         match collection.estimated_document_count(None).await {
             Ok(count) => {
                 log::debug!("Successfully counted docs in {}", self.db);
-                let result = doc! {"docs" : count};
+                let result = doc! {"docs" : count.to_string()};
                 Ok(result)
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn get_indexes(&self, collection: &str) -> Result<Document> {
+    pub async fn get_indexes(&self, collection: &str) -> BoxResult<Document> {
         // Log that we are trying to list collections
         log::debug!("Getting indexes in {}", self.db);
 
@@ -253,12 +255,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn rs_status(&self) -> Result<Document> {
+    pub async fn rs_status(&self) -> BoxResult<Document> {
         // Log that we are trying to list collections
         log::debug!("Getting replSetGetStatus");
 
@@ -272,12 +274,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn get_log(&self) -> Result<Vec<Bson>> {
+    pub async fn get_log(&self) -> BoxResult<Vec<Bson>> {
         // Log that we are trying to list collections
         log::debug!("Getting getLog");
 
@@ -292,12 +294,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn server_status(&self) -> Result<Document> {
+    pub async fn server_status(&self) -> BoxResult<Document> {
         // Log that we are trying to list collections
         log::debug!("Getting serverStatus");
 
@@ -311,12 +313,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn inprog(&self) -> Result<Vec<Bson>> {
+    pub async fn inprog(&self) -> BoxResult<Vec<Bson>> {
         log::debug!("Getting inprog");
 
         let database = self.client.database("admin");
@@ -330,12 +332,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn top(&self) -> Result<Document> {
+    pub async fn top(&self) -> BoxResult<Document> {
         log::debug!("Getting top");
 
         let database = self.client.database("admin");
@@ -349,12 +351,12 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(Box::new(e))
             }
         }
     }
 
-    pub async fn index_stats(&self, collection: &str) -> Result<Vec<Document>> {
+    pub async fn index_stats(&self, collection: &str) -> BoxResult<Vec<Document>> {
         log::debug!("Getting index stats");
 
         let mut commands = Vec::new();
@@ -369,7 +371,7 @@ impl DB {
             }
             Err(e) => {
                 log::error!("Got error {}", e);
-                Err(MyError::MongodbError)
+                Err(e)
             }
         }
     }
