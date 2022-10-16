@@ -1,29 +1,31 @@
 [package]
 name = "json-bucket"
-version = "0.1.14"
+version = "0.2.0"
 authors = ["Verticaleap"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hyper = { version = "0.14", features = ["server","http2","tcp"] }
+hyper = { version = "0.14" }
 tokio = { version = "1", features = ["full"] }
-futures-util = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version="0.3", features = ["env-filter"] }
+axum = "0.5"
+serde = { version = "1.0", features = ["derive"]}
 serde_json = "1.0"
-hyper-tls = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-#clap = "3.0.0-beta.1"
-clap = "2"
+clap = { version = "3", features = ["cargo", "env"] }
 env_logger = "0.8"
 log = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
-serde_yaml = "0.8"
-url = "2.0"
-http = "0.2"
-bytes = "0.5"
-mongodb = { version = "2.0", features = ["bson-chrono-0_4"] }
-futures = { version = "0.3.4", default-features = false, features = ["async-await"] }
-bson = { version = "2.0", features = ["chrono-0_4"] }
-json = "0.12"
-rust_tools = { git = "https://github.com/findelabs/rust-tools.git", branch = "master" }
+tower-http = { version = "0.3", features = ["trace", "auth", "limit"] }
+tower = { version = "0.4", features = ["filter"] }
+url = { version = "2", features = ["serde"] }
+metrics = "0.18"
+metrics-exporter-prometheus = "0.8"
+orion = { version = "0.17", features = ["safe_api"] }
+uuid = { version = "1.1", features = ["v4", "fast-rng"] }
+rand = { version = "0.8", features = ["std_rng"] }
+mongodb = { version = "2.3" }
+bson = "2.4"
+serde_bytes = "0.11"

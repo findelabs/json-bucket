@@ -1,63 +1,53 @@
+use axum::{
+    handler::Handler,
+    routing::{get, post},
+    Router,
+    middleware,
+    extract::Extension
+};
 use chrono::Local;
-use clap::{crate_version, App, Arg};
+use clap::{crate_name, crate_version, Command, Arg};
 use env_logger::{Builder, Target};
 use log::LevelFilter;
-use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Request, Server};
+use std::future::ready;
 use std::io::Write;
-use std::error::Error;
+use std::net::SocketAddr;
+use tower_http::trace::TraceLayer;
+use mongodb::Client;
+use mongodb::options::ClientOptions;
 
-use db::DB;
-//use error::MyError;
-
-mod db;
 mod error;
-mod server;
+mod handlers;
+mod metrics;
+mod state;
 
-type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+use crate::metrics::{setup_metrics_recorder, track_metrics};
+use handlers::{echo, handler_404, health, help, root, find_one};
+use state::State;
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    let opts = App::new("json-bucket")
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let opts = Command::new(crate_name!())
         .version(crate_version!())
-        .author("Daniel F. <dan@findelabs.com>")
-        .about("Main findereport site generator")
+        .author("")
+        .about(crate_name!())
         .arg(
-            Arg::with_name("uri")
-                .short("u")
-                .long("uri")
-                .required(true)
-                .value_name("URI")
-                .env("MONGODB_URI")
-                .help("MongoDB URI")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("db")
-                .short("d")
-                .long("db")
-                .required(true)
-                .value_name("MONGODB_DB")
-                .env("MONGODB_DB")
-                .help("MongoDB Database")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("port")
-                .short("p")
+            Arg::new("port")
+                .short('p')
                 .long("port")
                 .help("Set port to listen on")
-                .required(false)
-                .env("LISTEN_PORT")
+                .env("JSON_BUCKET_PORT")
                 .default_value("8080")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("readonly")
-                .short("r")
-                .long("readonly")
-                .help("Only access database read-only")
-                .required(false)
+            Arg::new("mongo")
+                .short('m')
+                .long("mongo")
+                .help("MongoDB connection url")
+                .env("JSON_BUCKET_MONGO")
+                .required(true)
+                .takes_value(true),
         )
         .get_matches();
 
@@ -66,48 +56,63 @@ async fn main() -> Result<()> {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{{\"date\": \"{}\", \"level\": \"{}\", \"message\": \"{}\"}}",
+                "{{\"date\": \"{}\", \"level\": \"{}\", \"log\": {}}}",
                 Local::now().format("%Y-%m-%dT%H:%M:%S:%f"),
                 record.level(),
                 record.args()
             )
         })
         .target(Target::Stdout)
-        .filter_level(LevelFilter::Error)
+        .filter_level(LevelFilter::Info)
         .parse_default_env()
         .init();
 
-    // Read in config file
-    let url = &opts.value_of("uri").unwrap();
-    let db = &opts.value_of("db").unwrap();
+    // Set port
     let port: u16 = opts.value_of("port").unwrap().parse().unwrap_or_else(|_| {
         eprintln!("specified port isn't in a valid range, setting to 8080");
         8080
     });
 
-    let db = DB::init(&url, &db).await?;
-    let addr = ([0, 0, 0, 0], port).into();
-    let service = make_service_fn(move |_| {
-        let opts = opts.clone();
-        let db = db.clone();
-        async move {
-            Ok::<_, hyper::Error>(service_fn(move |req: Request<Body>| {
-                server::main_handler(opts.clone(), req, db.clone())
-            }))
-        }
-    });
+    // Create mongo client
+    let client_options = ClientOptions::parse(opts.value_of("mongo").unwrap()).await?;
+    let client = Client::with_options(client_options)?;
+    if let Err(e) = client.list_database_names(None, None).await {
+        panic!("{}", e);
+    };
 
-    let server = Server::bind(&addr).serve(service);
+    // Create state for axum
+    let mut state = State::new(opts.clone(), client).await?;
 
-    println!(
-        "Starting json-bucket:{} on http://{}",
-        crate_version!(),
-        addr
-    );
+    // Create prometheus handle
+    let recorder_handle = setup_metrics_recorder();
 
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
+    // These should be authenticated
+    let base = Router::new()
+        .route("/", get(root));
+
+    // These should NOT be authenticated
+    let standard = Router::new()
+        .route("/health", get(health))
+        .route("/echo", post(echo))
+        .route("/:database/:collection/find_one", post(find_one))
+        .route("/help", get(help))
+        .route("/metrics", get(move || ready(recorder_handle.render())));
+
+    let app = Router::new()
+        .merge(base)
+        .merge(standard)
+        .layer(TraceLayer::new_for_http())
+        .route_layer(middleware::from_fn(track_metrics))
+        .layer(Extension(state));
+
+    // add a fallback service for handling routes to unknown paths
+    let app = app.fallback(handler_404.into_service());
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    println!("Listening on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
 
     Ok(())
 }
