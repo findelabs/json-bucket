@@ -19,11 +19,12 @@ use mongodb::options::ClientOptions;
 mod error;
 mod handlers;
 mod metrics;
-mod state;
+mod mongo;
+mod filters;
 
 use crate::metrics::{setup_metrics_recorder, track_metrics};
-use handlers::{echo, handler_404, health, help, root, find_one};
-use state::State;
+use handlers::{echo, handler_404, health, help, root, find_one, find};
+use mongo::MongoClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -80,8 +81,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         panic!("{}", e);
     };
 
-    // Create state for axum
-    let mut state = State::new(opts.clone(), client).await?;
+    // Create mongo for axum
+    let mongo = MongoClient::new(opts.clone(), client).await?;
 
     // Create prometheus handle
     let recorder_handle = setup_metrics_recorder();
@@ -95,6 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .route("/health", get(health))
         .route("/echo", post(echo))
         .route("/:database/:collection/find_one", post(find_one))
+        .route("/:database/:collection/find", post(find))
         .route("/help", get(help))
         .route("/metrics", get(move || ready(recorder_handle.render())));
 
@@ -103,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .merge(standard)
         .layer(TraceLayer::new_for_http())
         .route_layer(middleware::from_fn(track_metrics))
-        .layer(Extension(state));
+        .layer(Extension(mongo));
 
     // add a fallback service for handling routes to unknown paths
     let app = app.fallback(handler_404.into_service());

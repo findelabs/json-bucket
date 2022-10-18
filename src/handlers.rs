@@ -4,98 +4,39 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde::{Serialize, Deserialize};
 use clap::{crate_description, crate_name, crate_version};
 use serde_json::json;
 use serde_json::Value;
 use axum::extract::Path;
 use axum::response::Response;
 use axum::Extension;
-use std::collections::HashMap;
-use serde_json::Map;
-use bson::to_document;
 
 use crate::error::Error as RestError;
-use crate::State;
+use crate::MongoClient;
+use crate::filters::Filters;
 
 // This is required in order to get the method from the request
 #[derive(Debug)]
 pub struct RequestMethod(pub hyper::Method);
 
-#[derive(Serialize, Deserialize)]
-pub struct Filter(Map<String, Value>);
-
-#[derive(Serialize, Deserialize)]
-pub struct FilterOptions([Filter; 2]);
-
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Filters{
-    Filter(Filter),
-    FilterOptions(FilterOptions),
-}
-
-impl Filter {
-    pub fn filter(&self) -> Option<bson::Document> {
-        match to_document(self) {
-            Ok(c) => Some(c),
-            Err(e) => {
-                log::error!("Error converting filter to document");
-                None
-            }
-        }
-    }
-
-    pub fn options(&self) -> Option<bson::Document> {
-        None
-    }
-}
-
-impl FilterOptions {
-    pub fn filter(&self) -> Option<bson::Document> {
-        match to_document(&self.0[0]) {
-            Ok(c) => Some(c),
-            Err(e) => {
-                log::error!("Error converting filter to document");
-                None
-            }
-        }
-    }
-
-    pub fn options(&self) -> Option<bson::Document> {
-        match to_document(&self.0[1]) {
-            Ok(c) => Some(c),
-            Err(e) => {
-                log::error!("Error converting options to document");
-                None
-            }
-        }
-    }
-}
-
-impl Filters {
-    pub fn filter(&self) -> Option<bson::Document> {
-        match self {
-            Filters::Filter(s) => s.filter(),
-            Filters::FilterOptions(s) => s.filter()
-        }
-    }
-
-    pub fn options(&self) -> Option<bson::Document> {
-        match self {
-            Filters::Filter(s) => s.options(),
-            Filters::FilterOptions(s) => s.options()
-        }
-    }
-}
-
 pub async fn find_one(
-    Extension(mut state): Extension<State>,
+    Extension(mut state): Extension<MongoClient>,
     Path((database, collection)): Path<(String, String)>,
     Json(body): Json<Filters>,
 ) -> Result<Response, RestError> {
 
-    Ok((StatusCode::OK, "Response").into_response())
+    let response = state.find_one(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
+pub async fn find(
+    Extension(mut state): Extension<MongoClient>,
+    Path((database, collection)): Path<(String, String)>,
+    Json(body): Json<Filters>,
+) -> Result<Response, RestError> {
+
+    let response = state.find(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
 }
 
 pub async fn health() -> Json<Value> {
