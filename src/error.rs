@@ -9,7 +9,9 @@ use std::fmt;
 #[derive(Debug)]
 pub enum Error {
     NotFound,
-//    BadInsert,
+    Collections,
+    Databases,
+    BadInsert,
     DeError(bson::de::Error),
     SerError(bson::ser::Error),
     SerdeJson(serde_json::Error),
@@ -22,7 +24,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::NotFound => f.write_str("{\"error\": \"Not found\"}"),
-//            Error::BadInsert => f.write_str("{\"error\": \"Unable to insert new note\"}"),
+            Error::Collections=> f.write_str("{\"error\": \"Error getting collections\"}"),
+            Error::Databases=> f.write_str("{\"error\": \"Error getting databases\"}"),
+            Error::BadInsert => f.write_str("{\"error\": \"Error inserting doc\"}"),
             Error::DeError(ref err) => write!(f, "{{\"error\": \"{}\"}}", err),
             Error::SerError(ref err) => write!(f, "{{\"error\": \"{}\"}}", err),
             Error::SerdeJson(ref err) => write!(f, "{{\"error\": \"{}\"}}", err),

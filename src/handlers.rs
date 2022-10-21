@@ -14,6 +14,7 @@ use axum::Extension;
 use crate::error::Error as RestError;
 use crate::MongoClient;
 use crate::filters::Filters;
+use crate::inserts::InsertOne;
 
 // This is required in order to get the method from the request
 #[derive(Debug)]
@@ -36,6 +37,33 @@ pub async fn find(
 ) -> Result<Response, RestError> {
 
     let response = state.find(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
+pub async fn insert(
+    Extension(mut state): Extension<MongoClient>,
+    Path((database, collection)): Path<(String, String)>,
+    Json(body): Json<InsertOne>,
+) -> Result<Response, RestError> {
+
+    let response = state.insert(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
+pub async fn collections(
+    Extension(mut state): Extension<MongoClient>,
+    Path(database): Path<String>,
+) -> Result<Response, RestError> {
+
+    let response = state.collections(&database).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
+pub async fn databases(
+    Extension(mut state): Extension<MongoClient>,
+) -> Result<Response, RestError> {
+
+    let response = state.databases().await?;
     Ok((StatusCode::OK, response.to_string()).into_response())
 }
 

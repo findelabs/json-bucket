@@ -1,13 +1,14 @@
 use clap::ArgMatches;
-use crate::error::Error as RestError;
-use crate::filters::Filters;
 use bson::Document;
 //use axum::response::IntoResponse;
 use mongodb::Collection;
 use bson::from_document;
 use futures::stream::{StreamExt, TryStreamExt};
 
-//type BoxResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
+use crate::error::Error as RestError;
+use crate::filters::Filters;
+use crate::inserts::InsertOne;
+
 
 #[derive(Clone, Debug)]
 pub struct MongoClient {
@@ -90,5 +91,61 @@ impl MongoClient {
 
         let result = result.into_iter().rev().collect();
         Ok(result)
+    }
+
+    pub async fn insert(&self, database: &str, collection: &str, doc: InsertOne) -> Result<String, RestError> {
+        let coll_handle = self.collection(database, collection);
+        let (doc, options) = doc.doc_and_options();
+
+        let options = match options {
+            Some(t) => Some(from_document(t)?),
+            None => None
+        };
+
+        match coll_handle.insert_one(doc?, options).await {
+            Ok(v) => {
+                Ok(serde_json::to_string(&v)?)
+            },
+            Err(e) => {
+                log::error!("Error inserting doc: {}", e);
+                Err(RestError::BadInsert)
+            }
+        }
+    }
+
+    pub async fn databases(&self) -> Result<String, RestError> {
+        match self
+            .client
+            .list_database_names(None, None)
+            .await
+        {
+            Ok(dbs) => {
+                log::debug!("Success listing databases");
+                Ok(serde_json::to_string(&dbs)?)
+            }
+            Err(e) => {
+                log::error!("Got error listing databases: {}", e);
+                Err(RestError::Databases)
+            }
+        }
+    }
+
+    pub async fn collections(&self, database: &str) -> Result<String, RestError> {
+        match self
+            .client
+            .database(database)
+            .list_collection_names(None)
+            .await
+        {
+            Ok(collections) => {
+                log::debug!("Success listing collections in {}", database);
+                Ok(serde_json::to_string(&collections)?)
+            }
+            Err(e) => {
+                log::error!("Got error listing collections: {}", e);
+                Err(RestError::Collections)
+            }
+        }
+
     }
 }

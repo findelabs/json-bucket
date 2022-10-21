@@ -21,9 +21,10 @@ mod handlers;
 mod metrics;
 mod mongo;
 mod filters;
+mod inserts;
 
 use crate::metrics::{setup_metrics_recorder, track_metrics};
-use handlers::{echo, handler_404, health, help, root, find_one, find};
+use handlers::{echo, handler_404, health, help, root, find_one, find, insert, collections, databases};
 use mongo::MongoClient;
 
 #[tokio::main]
@@ -97,6 +98,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .route("/echo", post(echo))
         .route("/:database/:collection/find_one", post(find_one))
         .route("/:database/:collection/find", post(find))
+        .route("/:database/:collection/insert", post(insert))
+        .route("/:database/_cat/collections", get(collections))
+        .route("/_cat/databases", get(databases))
         .route("/help", get(help))
         .route("/metrics", get(move || ready(recorder_handle.render())));
 
