@@ -4,10 +4,12 @@ use bson::Document;
 use mongodb::Collection;
 use bson::from_document;
 use futures::stream::{StreamExt, TryStreamExt};
+use serde_json::from_value;
 
 use crate::error::Error as RestError;
 use crate::filters::Filters;
 use crate::inserts::InsertOne;
+use crate::aggregate_body::Aggregate;
 
 
 #[derive(Clone, Debug)]
@@ -77,6 +79,32 @@ impl MongoClient {
         };
 
         let mut cursor = coll_handle.find(filter, options).await?;
+        let mut result: Vec<String> = Vec::new();
+
+        while let Some(doc) = cursor.next().await {
+            match doc {
+                Ok(k) => result.push(serde_json::to_string(&k)?),
+                Err(e) => {
+                    log::error!("Caught error, skipping: {}", e);
+                    continue;
+                }
+            }
+        }
+
+        let result = result.into_iter().rev().collect();
+        Ok(result)
+    }
+
+    pub async fn aggregate(&self, database: &str, collection: &str, agg_body: Aggregate) -> Result<String, RestError> {
+        let coll_handle = self.collection(database, collection);
+        let (pipeline, options) = agg_body.pipeline_and_options();
+
+        let options = match options {
+            Some(t) => Some(from_value(t)?),
+            None => None
+        };
+
+        let mut cursor = coll_handle.aggregate(pipeline, options).await?;
         let mut result: Vec<String> = Vec::new();
 
         while let Some(doc) = cursor.next().await {

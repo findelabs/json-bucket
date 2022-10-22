@@ -15,6 +15,7 @@ use crate::error::Error as RestError;
 use crate::MongoClient;
 use crate::filters::Filters;
 use crate::inserts::InsertOne;
+use crate::aggregate_body::Aggregate;
 
 // This is required in order to get the method from the request
 #[derive(Debug)]
@@ -37,6 +38,16 @@ pub async fn find(
 ) -> Result<Response, RestError> {
 
     let response = state.find(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
+pub async fn aggregate(
+    Extension(mut state): Extension<MongoClient>,
+    Path((database, collection)): Path<(String, String)>,
+    Json(body): Json<Aggregate>,
+) -> Result<Response, RestError> {
+
+    let response = state.aggregate(&database, &collection, body).await?;
     Ok((StatusCode::OK, response.to_string()).into_response())
 }
 
