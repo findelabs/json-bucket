@@ -3,13 +3,14 @@ use bson::Document;
 //use axum::response::IntoResponse;
 use mongodb::Collection;
 use bson::from_document;
-use futures::stream::{StreamExt, TryStreamExt};
+use futures::stream::{StreamExt};
 use serde_json::from_value;
+use chrono::Utc;
 
 use crate::error::Error as RestError;
 use crate::filters::Filters;
 use crate::inserts::InsertOne;
-use crate::aggregate_body::Aggregate;
+use crate::request_body::DocsOptions;
 
 
 #[derive(Clone, Debug)]
@@ -95,9 +96,9 @@ impl MongoClient {
         Ok(result)
     }
 
-    pub async fn aggregate(&self, database: &str, collection: &str, agg_body: Aggregate) -> Result<String, RestError> {
+    pub async fn aggregate(&self, database: &str, collection: &str, body: DocsOptions) -> Result<String, RestError> {
         let coll_handle = self.collection(database, collection);
-        let (pipeline, options) = agg_body.pipeline_and_options();
+        let (pipeline, options) = body.pipeline_and_options();
 
         let options = match options {
             Some(t) => Some(from_value(t)?),
@@ -119,6 +120,31 @@ impl MongoClient {
 
         let result = result.into_iter().rev().collect();
         Ok(result)
+    }
+
+    pub async fn insert_many(&self, database: &str, collection: &str, body: DocsOptions) -> Result<String, RestError> {
+        let coll_handle = self.collection(database, collection);
+        let (pipeline, options) = body.pipeline_and_options();
+
+        let options = match options {
+            Some(t) => Some(from_value(t)?),
+            None => None
+        };
+
+        let now = Utc::now();
+        for mongodoc in pipeline?.iter_mut() {
+            mongodoc.insert("_time", now);
+        };
+
+        match coll_handle.insert_many(pipeline, options).await {
+            Ok(v) => {
+                Ok(serde_json::to_string(&v)?)
+            },
+            Err(e) => {
+                log::error!("Error inserting doc: {}", e);
+                Err(RestError::BadInsert)
+            }
+        }
     }
 
     pub async fn insert(&self, database: &str, collection: &str, doc: InsertOne) -> Result<String, RestError> {

@@ -15,14 +15,14 @@ use crate::error::Error as RestError;
 use crate::MongoClient;
 use crate::filters::Filters;
 use crate::inserts::InsertOne;
-use crate::aggregate_body::Aggregate;
+use crate::request_body::DocsOptions;
 
 // This is required in order to get the method from the request
 #[derive(Debug)]
 pub struct RequestMethod(pub hyper::Method);
 
 pub async fn find_one(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
     Path((database, collection)): Path<(String, String)>,
     Json(body): Json<Filters>,
 ) -> Result<Response, RestError> {
@@ -32,7 +32,7 @@ pub async fn find_one(
 }
 
 pub async fn find(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
     Path((database, collection)): Path<(String, String)>,
     Json(body): Json<Filters>,
 ) -> Result<Response, RestError> {
@@ -42,9 +42,9 @@ pub async fn find(
 }
 
 pub async fn aggregate(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
     Path((database, collection)): Path<(String, String)>,
-    Json(body): Json<Aggregate>,
+    Json(body): Json<DocsOptions>,
 ) -> Result<Response, RestError> {
 
     let response = state.aggregate(&database, &collection, body).await?;
@@ -52,7 +52,7 @@ pub async fn aggregate(
 }
 
 pub async fn insert(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
     Path((database, collection)): Path<(String, String)>,
     Json(body): Json<InsertOne>,
 ) -> Result<Response, RestError> {
@@ -61,8 +61,18 @@ pub async fn insert(
     Ok((StatusCode::OK, response.to_string()).into_response())
 }
 
+pub async fn insert_many(
+    Extension(state): Extension<MongoClient>,
+    Path((database, collection)): Path<(String, String)>,
+    Json(body): Json<DocsOptions>,
+) -> Result<Response, RestError> {
+
+    let response = state.insert_many(&database, &collection, body).await?;
+    Ok((StatusCode::OK, response.to_string()).into_response())
+}
+
 pub async fn collections(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
     Path(database): Path<String>,
 ) -> Result<Response, RestError> {
 
@@ -71,7 +81,7 @@ pub async fn collections(
 }
 
 pub async fn databases(
-    Extension(mut state): Extension<MongoClient>,
+    Extension(state): Extension<MongoClient>,
 ) -> Result<Response, RestError> {
 
     let response = state.databases().await?;

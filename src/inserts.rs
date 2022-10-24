@@ -1,6 +1,4 @@
 use bson::to_document;
-use std::collections::HashMap;
-use serde_json::Map;
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
 use chrono::Utc;
@@ -43,7 +41,7 @@ impl DocWithOptions {
 
     pub fn options(&self) -> Option<bson::Document> {
         match to_document(&self.0[1]) {
-            Ok(mut c) => {
+            Ok(c) => {
                 Some(c)
             },
             Err(e) => {

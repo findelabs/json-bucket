@@ -1,9 +1,7 @@
 use bson::to_document;
-use std::collections::HashMap;
-use serde_json::Map;
 use serde_json::Value;
+use serde_json::Map;
 use serde::{Serialize, Deserialize};
-
 
 #[derive(Serialize, Deserialize)]
 pub struct Filter(Map<String, Value>);
